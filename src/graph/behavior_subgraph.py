@@ -189,7 +189,7 @@ def process_apk_wrapper(*args, **kwargs): # multiple arguments
     num_subgraph = 0
     logging.info(app)
     try:
-        data_list = asyncio.run(gml2Data(app, label, tpl=tpl, hop=hop, base_dir=base_dir))
+        data_list = asyncio.run(gml2Data(app, label, tpl=tpl, hop=hop, base_dir=base_dir), debug=True) # ! Initialize Asyncio
         dlen = len(data_list)
         if dlen:
             for i in range(dlen):

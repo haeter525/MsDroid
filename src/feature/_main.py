@@ -14,6 +14,9 @@ def generate_feature(apk_base, db_name, output_dir, deepth):
     # return all complete paths for `call.gml`
     db_path = os.path.join(apk_base, db_name)
     print(db_path)
+    
+    assert os.path.exists(db_path), f"{db_path=} is not exists"
+    
     cg_path = os.path.join(output_dir, db_name, "decompile")
     feature_path = os.path.join(output_dir, db_name, "result")
     settings = {
@@ -22,7 +25,7 @@ def generate_feature(apk_base, db_name, output_dir, deepth):
         # Use the default Logger
         "log": auto.DefaultAndroLog,
         # Use maximum of 2 threads
-        "max_fetcher": 2,
+        "max_fetcher": 12,
     }
     aa = auto.AndroAuto(settings)
     aa.go()

@@ -183,4 +183,4 @@ class AndroGen(auto.DirectoryAndroAnalysis):
         # If some error happens during the analysis, this method will be
         # called
         self.has_crashed = True
-        _settings.logger.debug("Error during analysis of {}: {}".format(log, why), file=sys.stderr)
+        _settings.logger.debug("Error during analysis of {}: {}".format(log, why))

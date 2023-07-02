@@ -11,3 +11,6 @@ src/test_*.py
 src/androguard
 src/feature/LibRadar/Data/Decompiled/*
 src/feature/LibRadar/Data/lite_dataset_10.csv
+
+*.apk
+*.gml

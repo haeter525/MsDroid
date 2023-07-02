@@ -65,7 +65,6 @@ def metric2scores(TP, FP, TN, FN, f=True):
 
 
 def fscore(p, r, beta):
-    try:
-        return (1+beta*beta)*p*r / ((beta*beta*p)+r)
-    except ZeroDivisionError:
-        return 0
+    base = ((beta*beta*p)+r)
+    if base == 0: return 0
+    else: return (1+beta*beta)*p*r / base

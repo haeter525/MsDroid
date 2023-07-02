@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser.add_argument('--label', '-l', help='dataset label: malware(1) / benign(0), unnecessary if only prediction needed.', default=1)
     parser.add_argument('--deepth', '-dp', help='deepth of tpl seaching', default=3)
     # Training
-    parser.add_argument('--dbs', type=list, default=['TestAPK'], help='Datasets to train.')
+    # parser.add_argument('--dbs', type=list, default=['apks'], help='Datasets to train.')
     parser.add_argument('--tpl', type=bool, default=True, help='TPL simplified subgraphs.')
     parser.add_argument('--hop', type=int, default=2, help='K-hop based subgraphs.')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for Dataloader.')
@@ -53,16 +53,18 @@ if __name__ == "__main__":
     parser.add_argument('--epoch', type=int, default=1, help='Training epoches.')
     parser.add_argument('--force', type=bool, default=False, help='Force new train in exp_base with same config.')
     parser.add_argument('--continue_train', type=bool, default=False, help='Continue to train from last checkpoint.')
+    parser.add_argument('--testonly', type=bool, default=False, help='!!!!!!')
     args = parser.parse_args()
 
     input_dir = args.input
+    assert os.path.exists(input_dir), f"{input_dir} is not exists"
     apk_base = os.path.abspath(os.path.join(input_dir,'../'))
     db_name = input_dir.split(apk_base)[-1].strip('/')
     
     output_dir = args.output
     makedirs(output_dir)
-    label = args.label
-    dbs = args.dbs
+    label = float(args.label)
+    dbs = ["malicious"]
     tpl = args.tpl
     hop = args.hop
     batch_size = args.batch_size
@@ -76,6 +78,7 @@ if __name__ == "__main__":
     epoch = args.epoch
     force = args.force
     continue_train = args.continue_train
+    testonly = args.testonly
     
     exp_dir = f'./training/Graphs/{db_name}/HOP_{hop}/TPL_{tpl}'
     if not os.path.exists(f'{exp_dir}/dataset.pt'):

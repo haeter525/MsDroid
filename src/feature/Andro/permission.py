@@ -99,17 +99,18 @@ class Permission():
                     super_class = self.super_dic[t_class]
                     while True:
                         new_label = t.replace(t_class, super_class)
-                        try:
-                            super_funcList = self.class_functions[super_class]
-                            if is_in_funcList(super_funcList, new_label):
-                                mappings[t] = (new_label, t_id)
-                                break
-                            else:
-                                t_class = super_class
-                                super_class = self.super_dic[t_class]
-                        except KeyError:
+                        
+                        super_funcList = self.class_functions[super_class]
+                        if is_in_funcList(super_funcList, new_label):
                             mappings[t] = (new_label, t_id)
                             break
+                        else:
+                            t_class = super_class
+                            if t_class not in self.super_dic:
+                                mappings[t] = (new_label, t_id)
+                                break
+                            super_class = self.super_dic[t_class]
+                            
         return mappings
 
 
