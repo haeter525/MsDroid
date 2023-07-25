@@ -45,15 +45,18 @@ def mapping_dataset(map_path, db_path, max_gid):
             data_list = []
             for subgraph_id in sub_list:
                 ptfile = f"{db_path}/data_{graph_id}_{subgraph_id}.pt"
-                # dataset
-                data = torch.load(ptfile)
-                data_list.append(data)
-                # mappings
-                apk_name = data.app
-                api_name = data.mapping[data.center]
-                item = pd.DataFrame([[graph_id, subgraph_id, apk_name, api_name]], columns=names)
-                mappings = mappings.append(item)
-                pbar.set_description(ptfile.split('/')[-1])
+                try:
+                    # dataset
+                    data = torch.load(ptfile)
+                    data_list.append(data)
+                    # mappings
+                    apk_name = data.app
+                    api_name = data.mapping[data.center]
+                    item = pd.DataFrame([[graph_id, subgraph_id, apk_name, api_name]], columns=names)
+                    mappings = mappings.append(item)
+                    pbar.set_description(ptfile.split('/')[-1])
+                except RuntimeError as e:
+                    print(e)
             dataset.append(Data(data=data_list))
     
     mappings.to_csv(map_path, index=False)
