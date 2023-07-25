@@ -25,37 +25,7 @@ graph_base = f'./training/Graphs'
 logger = set_logger(logging.getLogger())
 
 
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='MsDroid Trainer.')
-    # Generate behavior subgraphs
-    parser.add_argument('--input', '-i', help='APK directory')
-    parser.add_argument('--output', '-o', help='output directory', default=f'{sys.path[0]}/Output')
-    parser.add_argument('--device', '-d', help='device for model test', default='cpu')
-    parser.add_argument('--batch', '-b', help='batch size for model test', default=16)
-    parser.add_argument('--label', '-l', help='dataset label: malware(1) / benign(0), unnecessary if only prediction needed.', default=1)
-    parser.add_argument('--deepth', '-dp', help='deepth of tpl seaching', default=3)
-    # Training
-    # parser.add_argument('--dbs', type=list, default=['apks'], help='Datasets to train.')
-    parser.add_argument('--tpl', type=bool, default=True, help='TPL simplified subgraphs.')
-    parser.add_argument('--hop', type=int, default=2, help='K-hop based subgraphs.')
-    parser.add_argument('--batch_size', type=int, default=64, help='Batch size for Dataloader.')
-    parser.add_argument('--train_rate', type=float, default=0.8, help='Training rate.')
-    parser.add_argument('--norm_op', type=bool, default=False, help='Normalize opcodes feature.')
-    parser.add_argument('--mask', type=int, default=-1, help='Mask node features. 0: disable opcodes, 1: disable permission, 2: disable both')
-    parser.add_argument('--global_pool', type=str, default='mix', help='Global pooling method for graph classification.')
-    parser.add_argument('--lossfunc', type=int, default=0, help='Index of loss function.')
-    parser.add_argument('--dimension', type=int, default=128, help='Hidden layer graph embedding dimension.')
-    parser.add_argument('--dev', type=int, default=0, help='GPU device id.')
-    parser.add_argument('--exp_base', type=str, default=exp_base, help='Dir to put exp results.')
-    parser.add_argument('--graph_base', type=str, default=graph_base, help='Dir for graphs.')
-    # For Train (`train_and_test`)
-    parser.add_argument('--epoch', type=int, default=1, help='Training epoches.')
-    parser.add_argument('--force', type=bool, default=False, help='Force new train in exp_base with same config.')
-    parser.add_argument('--continue_train', type=bool, default=False, help='Continue to train from last checkpoint.')
-    parser.add_argument('--testonly', type=bool, default=False, help='!!!!!!')
-    args = parser.parse_args()
-
+def start(logger, args):
     input_dir = args.input
     assert os.path.exists(input_dir), f"{input_dir} is not exists"
     apk_base = os.path.abspath(os.path.join(input_dir,'../'))
@@ -64,7 +34,7 @@ if __name__ == "__main__":
     output_dir = args.output
     makedirs(output_dir)
     label = float(args.label)
-    dbs = ["malicious"]
+    dbs = args.dbs
     tpl = args.tpl
     hop = args.hop
     batch_size = args.batch_size
@@ -97,3 +67,40 @@ if __name__ == "__main__":
     graph_droid = GraphDroid(hop, tpl, dbs, norm_opcode=norm_opcode, mask=mask, model_config=model_config, exp_base=args.exp_base, graph_base=args.graph_base, logger=logger)
     
     graph_droid.train_and_test(epoch, force=force, continue_train=continue_train, dev=dev, testonly=testonly)
+
+def parse_args(args=None):
+    import argparse
+
+    parser = argparse.ArgumentParser(description='MsDroid Trainer.')
+    # Generate behavior subgraphs
+    parser.add_argument('--input', '-i', help='APK directory')
+    parser.add_argument('--output', '-o', help='output directory', default=f'{sys.path[0]}/Output')
+    parser.add_argument('--device', '-d', help='device for model test', default='cpu')
+    parser.add_argument('--batch', '-b', help='batch size for model test', default=16)
+    parser.add_argument('--label', '-l', help='dataset label: malware(1) / benign(0), unnecessary if only prediction needed.', default=1)
+    parser.add_argument('--deepth', '-dp', help='deepth of tpl seaching', default=3)
+    # Training
+    parser.add_argument('--dbs', action="append", default=['apks'], help='Datasets to train.')
+    parser.add_argument('--tpl', type=bool, default=True, help='TPL simplified subgraphs.')
+    parser.add_argument('--hop', type=int, default=2, help='K-hop based subgraphs.')
+    parser.add_argument('--batch_size', type=int, default=64, help='Batch size for Dataloader.')
+    parser.add_argument('--train_rate', type=float, default=0.8, help='Training rate.')
+    parser.add_argument('--norm_op', type=bool, default=False, help='Normalize opcodes feature.')
+    parser.add_argument('--mask', type=int, default=-1, help='Mask node features. 0: disable opcodes, 1: disable permission, 2: disable both')
+    parser.add_argument('--global_pool', type=str, default='mix', help='Global pooling method for graph classification.')
+    parser.add_argument('--lossfunc', type=int, default=0, help='Index of loss function.')
+    parser.add_argument('--dimension', type=int, default=128, help='Hidden layer graph embedding dimension.')
+    parser.add_argument('--dev', type=int, default=0, help='GPU device id.')
+    parser.add_argument('--exp_base', type=str, default=exp_base, help='Dir to put exp results.')
+    parser.add_argument('--graph_base', type=str, default=graph_base, help='Dir for graphs.')
+    # For Train (`train_and_test`)
+    parser.add_argument('--epoch', type=int, default=1, help='Training epoches.')
+    parser.add_argument('--force', type=bool, default=False, help='Force new train in exp_base with same config.')
+    parser.add_argument('--continue_train', type=bool, default=False, help='Continue to train from last checkpoint.')
+    parser.add_argument('--testonly', type=bool, default=False, help='!!!!!!')
+    args = parser.parse_args(args)
+    return args
+
+if __name__ == "__main__":
+    args = parse_args()
+    start(logger, args)
