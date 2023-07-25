@@ -82,24 +82,28 @@ class MyOwnDataset(Dataset):
         for i in tqdm(range(len(apps))):
             data_file = f'{self.root}/processed/data_{i}_0.pt'
             if osp.exists(data_file):
-                a = torch.load(data_file).app
-                # '''
-                gml = apps[apps.str.contains(a)]
-                assert len(gml) == 1
-                apps = apps.drop(gml.index)
-                # '''
-                '''
-                a_api = glob.glob(f'{self.root}/processed/data_{i}_*.pt')
-                if len(pd.read_csv(apps[i].replace(f'{self.db}/decompile', f'{self.db}/result/permission').replace('/call.gml', '.csv'))) == len(a_api):
+                try:
+                    a = torch.load(data_file).app
+                    # '''
                     gml = apps[apps.str.contains(a)]
                     assert len(gml) == 1
                     apps = apps.drop(gml.index)
-                    # print(f'[GraphDroid] Found {gml.item()}')
-                else:
+                    # '''
+                    '''
+                    a_api = glob.glob(f'{self.root}/processed/data_{i}_*.pt')
+                    if len(pd.read_csv(apps[i].replace(f'{self.db}/decompile', f'{self.db}/result/permission').replace('/call.gml', '.csv'))) == len(a_api):
+                        gml = apps[apps.str.contains(a)]
+                        assert len(gml) == 1
+                        apps = apps.drop(gml.index)
+                        # print(f'[GraphDroid] Found {gml.item()}')
+                    else:
+                        graph_ids.append(i)
+                        for api in a_api:
+                            os.remove(api)
+                    '''
+                except EOFError:
+                    os.remove(data_file)
                     graph_ids.append(i)
-                    for api in a_api:
-                        os.remove(api)
-                '''
             else:
                 graph_ids.append(i)
 
@@ -132,14 +136,17 @@ class MyOwnDataset(Dataset):
             f.write(str(flens))
 
     def process(self, apps, graph_ids):
-        self.get_sep(apps[0])
-        apps = apps.sort_values()
-        zip_args = list(zip(apps, graph_ids))
-        logging.info(f'Processing {len(zip_args)} apps...')
+        try:
+            self.get_sep(apps[0])
+            apps = apps.sort_values()
+            zip_args = list(zip(apps, graph_ids))
+            logging.info(f'Processing {len(zip_args)} apps...')
 
-        partial_func = partial(process_apk_wrapper, label=self.label, tpl=self.tpl, hop=self.hop, base_dir=self.base_dir, processed_dir=self.processed_dir) # fixed params
-        self.samples, self.lens = mp_process(partial_func, zip_args)
-        logging.info(f'Total app samples: {self.samples}, total behavior subgraphs: {self.lens}')
+            partial_func = partial(process_apk_wrapper, label=self.label, tpl=self.tpl, hop=self.hop, base_dir=self.base_dir, processed_dir=self.processed_dir) # fixed params
+            self.samples, self.lens = mp_process(partial_func, zip_args)
+            logging.info(f'Total app samples: {self.samples}, total behavior subgraphs: {self.lens}')
+        except BaseException as e:
+            print(e)
 
     def len(self):
         if not(self.samples & self.lens):
@@ -332,22 +339,23 @@ def check_gml(gmllist):
 if __name__ == '__main__':
     makedirs('loggings'); makedirs('mappings')
 
-    import argparse
-    parser = argparse.ArgumentParser(description='GraphDroid Data Generator.')
-    parser.add_argument('db', type=str, help='Choose a decompiled APK dataset.')
-    parser.add_argument('--tpl', type=str, default=True, help='Simpilfy third party library API nodes.')
-    parser.add_argument('--hop', type=int, default=2, help='Subgraph based on k hop neighborhood.')
-    parser.add_argument('--label', type=int, default=None, help='Dataset label: 1 for Malicious, 0 for Benign.')
-    parser.add_argument('--base', type=str, default=None, help='Call graph and feature files directory.')
-    parser.add_argument('--layer', type=int, default=1, help='Speed up gml searching.')
-    args = parser.parse_args()
+    # import argparse
+    # parser = argparse.ArgumentParser(description='GraphDroid Data Generator.')
+    # # parser.add_argument('db', type=str, default="malicious", help='Choose a decompiled APK dataset.')
+    # parser.add_argument('--tpl', type=str, default=True, help='Simpilfy third party library API nodes.')
+    # parser.add_argument('--hop', type=int, default=2, help='Subgraph based on k hop neighborhood.')
+    # parser.add_argument('--label', type=int, default=None, help='Dataset label: 1 for Malicious, 0 for Benign.')
+    # parser.add_argument('--base', type=str, default=None, help='Call graph and feature files directory.')
+    # parser.add_argument('--layer', type=int, default=1, help='Speed up gml searching.')
+    # args = parser.parse_args()
 
     LOG_FORMAT = '%(asctime)s %(filename)s[%(lineno)d] %(levelname)s - %(message)s'
     current_milli_time = lambda: int(round(time.time() * 1000))
 
-    db = args.db
-    tpl = args.tpl
-    hop = args.hop
+    # db = args.db
+    db = "malicious"
+    tpl = True
+    hop = 2
 
     exp_dir = f'./Datasets/{db}/HOP_{hop}/TPL_{tpl}'
     makedirs(exp_dir)
@@ -355,14 +363,14 @@ if __name__ == '__main__':
     logging.basicConfig(filename=f'./loggings/[HOP_{hop}-TPL_{tpl}-{db}]{current_milli_time()}.log', level=logging.INFO, format=LOG_FORMAT)
     logging.debug(exp_dir)
 
-    if args.label is None:
-        try:
-            db_labels = {'Drebin':1, 'Genome':1, 'AMD':1, 'Benign':0}
-            label = db_labels[db.split('_')[0]]
-        except Exception:
-            logging.error('Label must be specified for unkown dataset')
-    else:
-        label = args.label
-
-    layer = None if args.layer < 0 else args.layer
-    dataset = MyOwnDataset(root=exp_dir, label=label, tpl=tpl, hop=hop, db=db, base_dir=args.base, layer=layer)
+    
+    try:
+        db_labels = {'Drebin':1, 'Genome':1, 'AMD':1, 'Benign':0}
+        label = db_labels[db.split('_')[0]]
+    except Exception:
+        logging.error('Label must be specified for unkown dataset')
+    
+    label = 1
+    
+    layer = None if 1 < 0 else 1
+    dataset = MyOwnDataset(root=exp_dir, label=label, tpl=tpl, hop=hop, db=db, base_dir=None, layer=layer)
